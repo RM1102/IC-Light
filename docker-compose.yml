@@ -1,0 +1,75 @@
+# Docker Compose configuration for IC-Light
+# Note: This file uses the Compose Specification format (Docker Compose V2).
+# The 'version' key is obsolete and not needed.
+# Requires Docker Compose V2.0+ and Docker with NVIDIA Container Toolkit.
+
+services:
+  ic-light:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ic-light:latest
+    container_name: ic-light
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - MODEL_DIR=/app/models
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      - HF_HOME=/app/cache/huggingface
+      - TORCH_HOME=/app/cache/torch
+    volumes:
+      # Mount models directory for persistence
+      - ./models:/app/models
+      # Mount cache directory for HuggingFace models
+      - ic-light-cache:/app/cache
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    # For REST API mode, use:
+    # command: python -u api.py
+    # For RunPod handler mode (default):
+    command: python -u handler.py
+
+  # Optional: REST API service
+  ic-light-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ic-light:latest
+    container_name: ic-light-api
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - MODEL_DIR=/app/models
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      - HF_HOME=/app/cache/huggingface
+      - TORCH_HOME=/app/cache/torch
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      - ./models:/app/models
+      - ic-light-cache:/app/cache
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    command: python -u api.py
+    profiles:
+      - api
+
+volumes:
+  ic-light-cache:
+    driver: local

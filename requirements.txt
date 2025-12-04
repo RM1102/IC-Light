@@ -8,3 +8,10 @@ torch
 peft
 gradio==3.41.2
 protobuf==3.20
+
+# Deployment dependencies
+runpod>=1.6.0
+uvicorn>=0.27.0
+fastapi>=0.109.1
+python-multipart>=0.0.18
+huggingface-hub>=0.20.0

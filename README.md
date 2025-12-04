@@ -262,3 +262,181 @@ Also read ...
 [Relightful Harmonization: Lighting-aware Portrait Background Replacement](https://arxiv.org/abs/2312.06886)
 
 [SwitchLight: Co-design of Physics-driven Architecture and Pre-training Framework for Human Portrait Relighting](https://arxiv.org/pdf/2402.18848)
+
+# Deployment
+
+IC-Light can be deployed as a Docker container on RunPod (serverless or pod-based) or any Docker-compatible platform.
+
+## Docker Build
+
+Build the Docker image:
+
+```bash
+docker build -t ic-light:latest .
+```
+
+## Docker Compose (Local Testing)
+
+For local testing with GPU support:
+
+```bash
+# Start the RunPod handler
+docker compose up ic-light
+
+# Or start the REST API
+docker compose --profile api up ic-light-api
+```
+
+## RunPod Serverless Deployment
+
+1. Build and push the Docker image to a container registry:
+
+```bash
+docker build -t your-registry/ic-light:latest .
+docker push your-registry/ic-light:latest
+```
+
+2. Create a new RunPod Serverless endpoint:
+   - Go to [RunPod Serverless](https://www.runpod.io/serverless)
+   - Create a new endpoint with your Docker image
+   - Configure GPU type (recommended: RTX 3090, RTX 4090, or A10G)
+   - Set environment variables as needed
+
+3. Send requests to your endpoint:
+
+```python
+import runpod
+import base64
+
+runpod.api_key = "your_api_key"
+
+# Read and encode your image
+with open("input.jpg", "rb") as f:
+    image_b64 = base64.b64encode(f.read()).decode()
+
+# Call the endpoint
+result = runpod.run(
+    endpoint_id="your_endpoint_id",
+    input={
+        "image": image_b64,
+        "prompt": "beautiful woman, sunshine from window",
+        "mode": "fc",  # or "fbc" for background-conditioned
+        "bg_source": "Left Light",
+        "width": 512,
+        "height": 640,
+        "steps": 25,
+        "seed": 12345,
+    }
+)
+
+# Decode the result
+result_image = base64.b64decode(result["images"][0])
+with open("output.png", "wb") as f:
+    f.write(result_image)
+```
+
+## REST API Deployment
+
+For non-RunPod deployments, use the FastAPI-based REST API:
+
+```bash
+# Using Docker
+docker run --gpus all -p 8000:8000 ic-light:latest python -u api.py
+
+# Or using docker compose
+docker compose --profile api up ic-light-api
+```
+
+### API Endpoints
+
+- `GET /` - API information
+- `GET /health` - Health check
+- `POST /relight` - Relight an image
+- `GET /docs` - Swagger documentation
+
+### Example API Request
+
+```python
+import requests
+import base64
+
+# Read and encode your image
+with open("input.jpg", "rb") as f:
+    image_b64 = base64.b64encode(f.read()).decode()
+
+# Send request
+response = requests.post(
+    "http://localhost:8000/relight",
+    json={
+        "image": image_b64,
+        "prompt": "beautiful woman, sunshine from window",
+        "mode": "fc",
+        "bg_source": "Left Light",
+        "width": 512,
+        "height": 640,
+    }
+)
+
+# Decode the result
+result = response.json()
+result_image = base64.b64decode(result["images"][0])
+with open("output.png", "wb") as f:
+    f.write(result_image)
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MODEL_DIR` | Directory for model weights | `./models` |
+| `TRANSFORMERS_CACHE` | Cache directory for transformers | `/app/cache/transformers` |
+| `HF_HOME` | HuggingFace cache directory | `/app/cache/huggingface` |
+| `TORCH_HOME` | PyTorch cache directory | `/app/cache/torch` |
+| `API_HOST` | API server host | `0.0.0.0` |
+| `API_PORT` | API server port | `8000` |
+| `RUN_MODE` | Startup script mode | `handler` |
+| `SD_MODEL_NAME` | Base Stable Diffusion model | `stablediffusionapi/realistic-vision-v51` |
+| `CORS_ORIGINS` | Comma-separated list of allowed origins | `*` |
+
+## Request Parameters
+
+### Common Parameters
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `image` | string | Base64 encoded input image | Required |
+| `prompt` | string | Text prompt for relighting | Required |
+| `mode` | string | `fc` (foreground) or `fbc` (foreground+background) | `fc` |
+| `bg_source` | string | Lighting direction | `Left Light` |
+| `width` | int | Output width (256-1024) | `512` |
+| `height` | int | Output height (256-1024) | `640` |
+| `steps` | int | Inference steps | `25` (fc), `20` (fbc) |
+| `seed` | int | Random seed | `12345` |
+| `cfg_scale` | float | CFG scale | `2.0` (fc), `7.0` (fbc) |
+| `highres_scale` | float | Highres scale | `1.5` |
+| `highres_denoise` | float | Highres denoise | `0.5` |
+| `num_samples` | int | Number of output images | `1` |
+| `remove_background` | bool | Remove background from input | `true` |
+
+### FC Mode Specific
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `lowres_denoise` | float | Lowres denoise | `0.9` |
+
+### FBC Mode Specific
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `background_image` | string | Base64 encoded background | Required |
+
+### Background Source Options
+
+- `None` - No initial latent (FC mode only)
+- `Left Light` - Light from left
+- `Right Light` - Light from right
+- `Top Light` - Light from top
+- `Bottom Light` - Light from bottom
+- `Use Background Image` - Use uploaded background (FBC mode)
+- `Use Flipped Background Image` - Use flipped background (FBC mode)
+- `Ambient` - Ambient lighting (FBC mode)
