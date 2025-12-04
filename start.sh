@@ -23,7 +23,7 @@ download_model() {
 
     if [ ! -f "$model_path" ]; then
         echo "Downloading $model_name..."
-        wget -q --show-progress -O "$model_path" "$model_url"
+        wget -q --show-progress --timeout=30 --tries=3 -O "$model_path" "$model_url"
         echo "Downloaded $model_name successfully."
     else
         echo "$model_name already exists, skipping download."

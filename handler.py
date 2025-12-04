@@ -46,6 +46,10 @@ t2i_pipe = None
 i2i_pipe = None
 device = None
 
+# Constants
+PIXEL_MAX_VALUE = 255.0
+SD_MODEL_NAME = os.environ.get("SD_MODEL_NAME", "stablediffusionapi/realistic-vision-v51")
+
 
 class BGSource(Enum):
     """Background source options for relighting."""
@@ -101,8 +105,8 @@ def load_models(mode: str = "fc"):
     from transformers import CLIPTextModel, CLIPTokenizer
     from briarmbg import BriaRMBG
 
-    # Base SD model
-    sd15_name = "stablediffusionapi/realistic-vision-v51"
+    # Base SD model (configurable via environment variable)
+    sd15_name = SD_MODEL_NAME
 
     # Load components
     tokenizer = CLIPTokenizer.from_pretrained(sd15_name, subfolder="tokenizer")
@@ -576,7 +580,7 @@ def process_fbc(
 
     pixels = vae.decode(latents).sample
     pixels = pytorch2numpy(pixels, quant=False)
-    return [(x * 255.0).clip(0, 255).astype(np.uint8) for x in pixels]
+    return [(x * PIXEL_MAX_VALUE).clip(0, PIXEL_MAX_VALUE).astype(np.uint8) for x in pixels]
 
 
 def handler(job: dict) -> dict:
@@ -726,5 +730,9 @@ if __name__ == "__main__":
         runpod.serverless.start({"handler": handler})
     except ImportError:
         logger.warning("RunPod not installed. Running in standalone mode.")
-        # For local testing
+        logger.info("To use this handler with RunPod, install it with: pip install runpod")
+        logger.info("For standalone testing, you can import and call the handler function directly:")
+        logger.info("  from handler import handler, load_models")
+        logger.info("  load_models('fc')")
+        logger.info("  result = handler({'input': {...}})")
         print("Handler module loaded successfully. Use RunPod to start the serverless handler.")

@@ -18,6 +18,9 @@ from pydantic import BaseModel, Field
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# CORS configuration (configurable via environment variables)
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+
 # Import handler functions
 from handler import (
     load_models,
@@ -97,7 +100,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

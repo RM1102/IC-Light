@@ -32,8 +32,8 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install PyTorch with CUDA support
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch with CUDA support (pinned version for reproducible builds)
+RUN pip install --no-cache-dir torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu121
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -63,8 +63,8 @@ RUN mkdir -p /app/cache/transformers /app/cache/huggingface /app/cache/torch
 # Expose port for API
 EXPOSE 8000
 
-# Make start script executable
-RUN chmod +x /app/start.sh || true
+# Make start script executable (fail if file doesn't exist)
+RUN if [ -f /app/start.sh ]; then chmod +x /app/start.sh; fi
 
 # Default command - runs the RunPod handler
 CMD ["python", "-u", "handler.py"]

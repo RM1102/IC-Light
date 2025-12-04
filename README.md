@@ -395,6 +395,8 @@ with open("output.png", "wb") as f:
 | `API_HOST` | API server host | `0.0.0.0` |
 | `API_PORT` | API server port | `8000` |
 | `RUN_MODE` | Startup script mode | `handler` |
+| `SD_MODEL_NAME` | Base Stable Diffusion model | `stablediffusionapi/realistic-vision-v51` |
+| `CORS_ORIGINS` | Comma-separated list of allowed origins | `*` |
 
 ## Request Parameters
 
