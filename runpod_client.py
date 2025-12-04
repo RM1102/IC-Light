@@ -248,11 +248,13 @@ if __name__ == "__main__":
         exit(1)
 
     # Example: Process an image
-    INPUT_IMAGE = "imgs/i1.webp"  # Use one of the example images
+    # Try to find an example image, or use a custom path from environment
+    INPUT_IMAGE = os.environ.get("INPUT_IMAGE_PATH", "imgs/i1.webp")
 
     if not os.path.exists(INPUT_IMAGE):
         print(f"Error: Input image not found: {INPUT_IMAGE}")
-        print("Please provide a valid image path")
+        print("Please provide a valid image path via INPUT_IMAGE_PATH environment variable")
+        print("Example: export INPUT_IMAGE_PATH=/path/to/your/image.jpg")
         exit(1)
 
     print("\n" + "="*60)

@@ -212,7 +212,10 @@ Authorization: Bearer YOUR_API_KEY
 
 ```bash
 # Encode your image to base64
+# On macOS:
 IMAGE_B64=$(base64 -i your_image.jpg)
+# On Linux:
+IMAGE_B64=$(base64 -w 0 your_image.jpg)
 
 # Make the API call
 curl -X POST "https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/runsync" \

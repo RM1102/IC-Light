@@ -24,10 +24,8 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Clone the IC-Light repository
-RUN git clone https://github.com/lllyasviel/IC-Light.git . || true
-
-# Copy local files (in case building from local context)
+# Copy local files from the build context
+# Note: When building from the IC-Light repository, this copies all necessary files
 COPY . .
 
 # Install PyTorch with CUDA 12.1 support

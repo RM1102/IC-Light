@@ -27,9 +27,10 @@ def load_models():
     if models_loaded:
         return
 
-    # Import here to avoid loading models at module import time
-    # This allows the handler to start quickly and load models on first request
-    import gradio_demo  # noqa: F401
+    # Import gradio_demo module to trigger model loading as a side effect.
+    # The module loads models at import time (tokenizer, text_encoder, vae, unet, rmbg).
+    # This deferred import allows the handler to start quickly and load models on first request.
+    import gradio_demo  # noqa: F401 - import triggers model initialization
 
     models_loaded = True
     print("Models loaded successfully")
